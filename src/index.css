@@ -1,0 +1,84 @@
+/* CSS Reset + Base */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+:root {
+  --color-primary: #FF6B35;
+  --color-primary-dark: #e85a26;
+  --color-bg: #FFF8F3;
+  --color-surface: #FFFFFF;
+  --color-text: #2D2D2D;
+  --color-muted: #888888;
+  --color-border: #F0E8E0;
+  --color-shadow: rgba(255, 107, 53, 0.15);
+
+  /* Category pastel colors */
+  --color-breakfast: #FFF3CD;
+  --color-breakfast-text: #856404;
+  --color-breakfast-border: #FFE07A;
+
+  --color-lunch: #D1F7C4;
+  --color-lunch-text: #276221;
+  --color-lunch-border: #8EE27A;
+
+  --color-dinner: #D0E8FF;
+  --color-dinner-text: #0f4c8a;
+  --color-dinner-border: #80BFFF;
+
+  --color-snack: #F3D9FA;
+  --color-snack-text: #6b2d8b;
+  --color-snack-border: #D488F0;
+
+  --radius-sm: 6px;
+  --radius-md: 12px;
+  --radius-lg: 20px;
+  --radius-full: 9999px;
+
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.08);
+  --shadow-md: 0 4px 12px rgba(0,0,0,0.1);
+  --shadow-lg: 0 8px 32px rgba(0,0,0,0.15);
+
+  --font-sans: system-ui, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+
+  font-family: var(--font-sans);
+  font-size: 16px;
+  line-height: 1.5;
+  color: var(--color-text);
+  background-color: var(--color-bg);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  min-height: 100dvh;
+  background-color: var(--color-bg);
+}
+
+#root {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+}
+
+button {
+  font-family: inherit;
+  cursor: pointer;
+  border: none;
+  background: none;
+}
+
+input, select, textarea {
+  font-family: inherit;
+  font-size: 1rem;
+}
+
+ul, ol {
+  list-style: none;
+}
+
+h1, h2, h3, h4 {
+  line-height: 1.2;
+}
