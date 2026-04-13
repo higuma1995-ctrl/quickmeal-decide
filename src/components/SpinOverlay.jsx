@@ -13,11 +13,11 @@ export default function SpinOverlay({ meals, onResult, onDismiss }) {
     // Pick the final winner upfront
     const winner = meals[Math.floor(Math.random() * meals.length)];
 
-    let delay = 60;         // start fast (ms)
-    const maxDelay = 300;   // slow down to this
-    const increment = 18;   // how much to increase each step
+    let delay = 40;         // start fast (ms)
+    const maxDelay = 150;   // slow down to this
+    const increment = 15;   // how much to increase each step
     let steps = 0;
-    const totalSteps = 28;  // roughly 2 seconds total
+    const totalSteps = 14;  // roughly 0.8 seconds total
 
     function tick() {
       // Show a random meal name while spinning
