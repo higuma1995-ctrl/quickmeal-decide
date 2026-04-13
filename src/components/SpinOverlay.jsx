@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { CATEGORY_LABELS } from '../utils/categoryLabels';
 
 export default function SpinOverlay({ meals, onResult, onDismiss }) {
   const [displayName, setDisplayName] = useState('');
@@ -70,17 +71,17 @@ export default function SpinOverlay({ meals, onResult, onDismiss }) {
 
         {phase === 'result' && pickedMeal && (
           <>
-            <p className="result-label">You should eat:</p>
+            <p className="result-label">今日のごはんは：</p>
             <div className="result-name">{pickedMeal.name}</div>
             <span className={`result-tag tag-${pickedMeal.category.toLowerCase()}`}>
-              {pickedMeal.category}
+              {CATEGORY_LABELS[pickedMeal.category] ?? pickedMeal.category}
             </span>
             <div className="result-actions">
               <button className="btn-spin-again" onClick={handleSpinAgain}>
-                Spin Again
+                もう一度
               </button>
               <button className="btn-dismiss" onClick={onDismiss}>
-                Dismiss
+                閉じる
               </button>
             </div>
           </>

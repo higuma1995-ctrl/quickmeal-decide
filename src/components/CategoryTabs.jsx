@@ -1,3 +1,5 @@
+import { CATEGORY_LABELS } from '../utils/categoryLabels';
+
 const CATEGORIES = ['All', 'Breakfast', 'Lunch', 'Dinner', 'Snack'];
 
 export default function CategoryTabs({ activeCategory, onSelect }) {
@@ -11,7 +13,7 @@ export default function CategoryTabs({ activeCategory, onSelect }) {
           className={`category-tab${activeCategory === cat ? ' active' : ''}`}
           onClick={() => onSelect(cat)}
         >
-          {cat}
+          {CATEGORY_LABELS[cat] ?? cat}
         </button>
       ))}
     </div>

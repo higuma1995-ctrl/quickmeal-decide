@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { CATEGORY_LABELS } from '../utils/categoryLabels';
 
 const CATEGORIES = ['Breakfast', 'Lunch', 'Dinner', 'Snack'];
 
@@ -44,7 +45,7 @@ export default function AddMealForm({ onAdd }) {
         >
           {CATEGORIES.map((cat) => (
             <option key={cat} value={cat}>
-              {cat}
+              {CATEGORY_LABELS[cat] ?? cat}
             </option>
           ))}
         </select>
