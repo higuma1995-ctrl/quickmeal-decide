@@ -39,9 +39,9 @@ export default function App() {
     <div className="app">
       <header className="app-header">
         <h1 className="app-title">
-          <span className="title-icon">🍽️</span> QuickMeal Decide
+          <span className="title-icon">🍽️</span> クイックミール決定
         </h1>
-        <p className="app-subtitle">Can't decide what to eat? Let us choose!</p>
+        <p className="app-subtitle">何を食べようか迷っていますか？私たちにお任せください！</p>
       </header>
 
       <main className="app-main">

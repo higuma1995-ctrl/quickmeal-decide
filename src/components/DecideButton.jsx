@@ -7,7 +7,7 @@ export default function DecideButton({ onClick, disabled }) {
         disabled={disabled}
         aria-label="Decide what to eat"
       >
-        🎲 Decide!
+        🎲 決めよう！
       </button>
       {disabled && (
         <p className="decide-hint">Add at least one meal to spin!</p>
