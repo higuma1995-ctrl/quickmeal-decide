@@ -1,17 +1,14 @@
 export default function DecideButton({ onClick, disabled }) {
   return (
-    <div className="decide-wrapper">
+    <div className="decide-button-wrap">
       <button
         className="decide-btn"
         onClick={onClick}
         disabled={disabled}
-        aria-label="Decide what to eat"
+        aria-label="決める"
       >
-        🎲 決めよう！
+        🎲 決める
       </button>
-      {disabled && (
-        <p className="decide-hint">Add at least one meal to spin!</p>
-      )}
     </div>
   );
 }

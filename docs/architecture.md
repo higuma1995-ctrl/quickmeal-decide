@@ -1,109 +1,112 @@
-# QuickMeal Decide — Architecture
+# architecture.md
+_最終更新：2026-04-14_
 
-## Tech Stack
+> このファイルはClaude Codeが実装時に参照するファイル・コンポーネント構成の定義。
+> spec.mdと矛盾する場合はspec.mdを優先する。
 
-| Layer | Choice | Reason |
-|---|---|---|
-| Framework | React 19 + Vite 8 | Already scaffolded; fast HMR for development |
-| Styling | Plain CSS (CSS variables) | No build-time dependency; easy theming |
-| State | React `useState` + `useReducer` | App state is simple enough; no external store needed |
-| Persistence | `localStorage` via custom hook | Zero-backend; works offline |
-| Hosting | GitHub Pages | Free static hosting; CI via GitHub Actions |
+## 1. ディレクトリ構成
 
-## Directory Structure
-
-```
 src/
-├── main.jsx              # React root mount
-├── App.jsx               # Root component: layout + routing of views
-├── App.css               # Global styles, CSS variables, layout
-├── index.css             # CSS reset + base typography
+├── main.jsx
+├── App.jsx
+├── constants/
+│   └── presets.js
 ├── hooks/
-│   └── useMeals.js       # Custom hook: meal CRUD + localStorage sync
+│   ├── useCandidates.js
+│   ├── useDecisionLog.js
+│   └── useSession.js
 ├── components/
-│   ├── CategoryTabs.jsx  # Filter tab bar (All / Breakfast / …)
-│   ├── MealList.jsx      # Scrollable list of MealCard components
-│   ├── MealCard.jsx      # Single meal row with delete button
-│   ├── AddMealForm.jsx   # Inline form: name input + category select + submit
-│   ├── DecideButton.jsx  # Big "Decide!" CTA button
-│   └── SpinOverlay.jsx   # Full-screen overlay with spin animation + result
-└── data/
-    └── defaultMeals.js   # Seed dataset (imported once into localStorage)
-```
+│   ├── layout/
+│   │   ├── Header.jsx
+│   │   └── BottomNav.jsx
+│   ├── modals/
+│   │   ├── TutorialModal.jsx
+│   │   └── AdModal.jsx
+│   ├── decide/
+│   │   ├── DecideTab.jsx
+│   │   ├── FilterArea.jsx
+│   │   ├── DecideButton.jsx
+│   │   └── ResultArea.jsx
+│   ├── candidates/
+│   │   ├── CandidatesTab.jsx
+│   │   ├── AddCandidate.jsx
+│   │   ├── CandidateList.jsx
+│   │   └── CandidateItem.jsx
+│   └── log/
+│       ├── LogTab.jsx
+│       └── LogItem.jsx
+├── utils/
+│   ├── lottery.js
+│   ├── storage.js
+│   └── normalize.js
+└── styles/
+    └── index.css
 
-## State Shape
+## 2. コンポーネント責務
 
-```js
-// Managed by useMeals hook
-{
-  meals: [
-    { id: string, name: string, category: 'Breakfast'|'Lunch'|'Dinner'|'Snack' }
-  ]
-}
+App.jsx：アクティブタブの状態管理、TutorialModal表示制御
+Header.jsx：アプリ名表示のみ
+BottomNav.jsx：タブ切り替えUI
+TutorialModal.jsx：初回チュートリアルモーダル
+AdModal.jsx：擬似広告モーダル（5秒カウント）。将来のAdSense差し替え対象。このコンポーネント内の広告エリアを置き換える。
+DecideTab.jsx：フィルタ・抽選・結果の統括。useSession・useCandidates・useDecisionLogを呼び出す
+FilterArea.jsx：フィルタUIのみ。ロジックは親が持つ
+ResultArea.jsx：結果表示・共有・却下ボタン
+CandidateItem.jsx：タグ編集の展開・折りたたみを内部管理
+lottery.js：重み付き抽選の純粋関数
+storage.js：localStorage読み書きラッパー
+normalize.js：候補名の正規化（重複チェック用）
 
-// Local UI state in App.jsx
-{
-  activeCategory: 'All' | 'Breakfast' | 'Lunch' | 'Dinner' | 'Snack',
-  isSpinning: boolean,
-  pickedMeal: meal | null
-}
-```
+## 3. カスタムフック
 
-## Component Responsibilities
+useCandidates.js：
+- candidates: Candidate[]
+- addCandidate(name): void
+- removeCandidate(id): void
+- updateCandidate(id, patch): void
+- toggleExclude(id): void
+- localStorageと常に同期
+- 初期化時にpresets.jsをマージ（既存データがあれば上書きしない）
 
-### `App.jsx`
-- Owns `activeCategory`, `isSpinning`, `pickedMeal` state
-- Calls `useMeals` for meal CRUD
-- Computes `filteredMeals` from `meals` + `activeCategory`
-- Passes handlers down as props (no context needed at this scale)
+useDecisionLog.js：
+- log: LogEntry[]
+- addLog(name): void
+- removeLog(id): void
+- clearLog(): void
+- recentNames(n): string[]
 
-### `useMeals.js`
-- Initialises `meals` from `localStorage`; seeds defaults if empty
-- Exposes: `meals`, `addMeal(name, category)`, `deleteMeal(id)`
-- Writes to `localStorage` on every change via `useEffect`
+useSession.js：
+- freeSpins: number
+- consumeSpin(): void
+- tempExcluded: string[]
+- addTempExcluded(id): void
+- resetTempExcluded(): void
+- localStorageに保存しない（Reactのstateのみ）
 
-### `SpinOverlay.jsx`
-- Receives `meals` (filtered), `onClose` callback
-- Runs a `setInterval` cycling through random meal names (fast → slow)
-- After animation ends, calls `onClose(pickedMeal)` so `App` can record the result
-- Pure presentational animation — no business logic
+## 4. 抽選ロジック詳細（lottery.js）
 
-## Data Flow
+1. 全候補からフィルタ条件に合うものを抽出
+   - タグ未設定候補は常に含める
+   - tempExcludedに含まれる候補は除外
+   - isExcluded === trueの候補は除外
+2. 各候補に重みを付与
+   - recentNames(5)に含まれる候補：weight = 0.3
+   - それ以外：weight = 1.0
+3. 重み付き抽選で1件を選出
+4. 候補が0件の場合はtempExcludedをリセットして再試行
 
-```
-localStorage
-    │  initialise
-    ▼
-useMeals ──── meals ────► App ──── filteredMeals ──► MealList
-                          │                          CategoryTabs
-                          │
-                          ├── addMeal ◄── AddMealForm
-                          ├── deleteMeal ◄── MealCard
-                          │
-                          └── isSpinning / pickedMeal
-                                │
-                                ▼
-                          SpinOverlay (modal)
-```
+## 5. GitHub Actions
 
-## Build & Deploy
+トリガー：mainブランチへのpush
+ジョブ：npm install → npm run build → GitHub Pages deploy
+ビルド出力：dist/
+base URL：vite.config.jsで /quickmeal-decide/ を設定
 
-### Local development
-```bash
-npm run dev        # Vite dev server at localhost:5173
-npm run build      # Production build → dist/
-npm run preview    # Preview production build locally
-```
+## 6. PWA設定
 
-### GitHub Pages deployment
-- `vite.config.js` sets `base: '/quickmeal-decide/'` for correct asset paths
-- GitHub Actions workflow (`.github/workflows/deploy.yml`) triggers on push to `main`:
-  1. `npm ci`
-  2. `npm run build`
-  3. Deploy `dist/` to the `gh-pages` branch using `actions/deploy-pages`
-- Repository → Settings → Pages → Source: GitHub Actions
-
-## Performance Notes
-- All state lives in memory + localStorage; no network requests
-- Bundle is tiny (React + app code only); no UI library dependency
-- Spin animation uses `setInterval` + React state updates — no CSS animation library needed
+public/manifest.json：
+- name: QuickMeal Decide
+- short_name: 飯決め
+- icons（192px・512px）
+- display: standalone
+Service Worker：使用しない

@@ -1,0 +1,17 @@
+{
+  "name": "QuickMeal Decide",
+  "short_name": "飯決め",
+  "description": "何を食べるか迷ったときに決めてくれるアプリ",
+  "start_url": "/quickmeal-decide/",
+  "display": "standalone",
+  "background_color": "#FFF8F3",
+  "theme_color": "#FF6B35",
+  "icons": [
+    {
+      "src": "/quickmeal-decide/icons.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

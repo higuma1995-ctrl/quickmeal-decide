@@ -1,68 +1,192 @@
-# QuickMeal Decide — Product Specification
+# spec.md
+_最終更新：2026-04-14_
 
-## Overview
+> このファイルはClaude Codeが実装時に唯一従う仕様書。
+> specに書いてある → 実装OK / specに無い → 実装NG / 曖昧 → spec修正してから実装
 
-QuickMeal Decide is a lightweight web app that helps users instantly decide what to eat. The user registers their go-to quick meals, then taps a button to get a random pick with a spin animation.
+## 1. 全体構成
 
-## Target User
+### 1-1. レイアウト
+- 画面全体：モバイルファースト（最大幅480px、中央寄せ）
+- ヘッダー：アプリ名「QuickMeal Decide」を表示（タップ不可）
+- ボトムナビゲーション：常時表示、タブ3つ
 
-Someone who wastes time standing in front of the fridge thinking "what should I eat?" — they want a fast, fun decision without overthinking.
+### 1-2. タブ構成
+タブ①：決める 🎯
+タブ②：候補 📋
+タブ③：ログ 📜
+デフォルト表示タブ：「決める」
+タブ切り替え時、各タブの状態は保持する
 
-## Core Features
+## 2. 初回起動チュートリアル
+- 条件：localStorageに tutorial_done キーが存在しない場合
+- 表示形式：画面中央にモーダル（背景オーバーレイあり）
+- 内容：「迷ったらそのまま『決める』を押してください」
+- 操作：「閉じる」ボタンのみ
+- 閉じた後：localStorageに tutorial_done: true を保存
 
-### 1. Meal List Management
-- Display a list of registered meals with name and optional category tag
-- Add a new meal (name + category)
-- Delete an existing meal
-- Pre-populated with a set of default meals so the app is useful on first launch
-- Data persists in `localStorage`; no backend required
+## 3. 「決める」タブ
 
-### 2. Spin & Decide
-- Large, prominent "Decide!" button on the main screen
-- Clicking it triggers a visual roulette-style spin animation cycling through meal names
-- After ~2 seconds the animation slows and lands on one meal
-- The chosen meal is displayed prominently with a brief "You should eat: X" message
-- User can re-spin as many times as they like
+### 3-1. 画面構成（上から順）
+1. フィルタエリア
+2. 決めるボタン
+3. 結果エリア（初期は非表示）
 
-### 3. Category Filter
-- Categories: **All**, **Breakfast**, **Lunch**, **Dinner**, **Snack**
-- Filtering limits which meals can be picked during a spin
-- At least one meal must be available in the filtered set before spinning is allowed
+### 3-2. フィルタエリア
+- 3軸のフィルタをそれぞれ横並びのトグルボタンで表示
+- 選択は任意・複数選択可・選択なしも可
+予算：節約 / 定番 / ご馳走
+時間帯：ランチ / ディナー
+シーン：カフェ / 食事メイン / 飲み会 / 二次会
+- 同一軸内：OR条件
+- 異なる軸間：AND条件
+- フィルタ選択状態はセッション中保持（リロードでリセット）
+- 候補が0件：「条件に合う候補がありません。フィルタを変えてみてください。」を表示し決めるボタンを非活性
 
-### 4. Responsive & Mobile-First UI
-- Works well on both mobile (primary) and desktop
-- Clean, minimal design with a warm food-friendly color palette
+### 3-3. 決めるボタン
+- ラベル：「決める」
+- 候補が1件以上ある場合のみ活性
+- タップで抽選を実行し結果エリアに表示
 
-## Out of Scope (v1)
-- User accounts / cloud sync
-- Nutritional information
-- Recipe links
-- Social sharing
+### 3-4. 抽選ロジック
+候補プール：
+- 全候補からフィルタ条件に合うものを抽出
+- タグ未設定の候補はフィルタ条件に関わらず常に含める
+- セッション中に却下した候補は除外
+- 直近5件のログに含まれる候補は重みを0.3に設定（それ以外は1.0）
+- 重み付き抽選で1件を選出
 
-## Default Meal Dataset
+無料回数：
+- セッション開始時に freeSpins: 1 を付与
+- 「決める」タップのたびに消費
+- フィルタ変更では回復しない
+- freeSpins が0の場合、2回目以降は擬似広告視聴が必要
 
-| Name | Category |
-|---|---|
-| Fried Rice | Lunch |
-| Instant Ramen | Dinner |
-| Avocado Toast | Breakfast |
-| Caesar Salad | Lunch |
-| Omelette | Breakfast |
-| BLT Sandwich | Lunch |
-| Granola & Yogurt | Breakfast |
-| Pasta Aglio e Olio | Dinner |
-| Veggie Stir-fry | Dinner |
-| Hummus & Crackers | Snack |
+### 3-5. 擬似広告
+- 表示形式：モーダル（背景オーバーレイあり）
+- 内容：「広告を視聴すると再抽選できます」＋カウントダウン（5秒）
+- カウントダウン中：「スキップ」ボタンは非活性
+- カウントダウン終了後：「スキップ」ボタンが活性化
+- スキップ後：モーダルを閉じ、抽選を実行
+- 将来のAdSense差し替え対象：広告表示エリアをコンポーネントとして分離
 
-## UX Flow
+### 3-6. 結果エリア
+- 抽選後に表示
+- 表示内容：候補名のみ（大きなテキスト）
+- 操作ボタン2つ：
+  「これにする」：表示のみ（ログは自動保存済み）
+  「これじゃない」：一時除外リストに追加し再抽選（無料回数を消費）
+- ログ保存タイミング：結果が表示された時点で自動保存
 
-```
-[Home Screen]
-  ├── Category tabs (All / Breakfast / Lunch / Dinner / Snack)
-  ├── Meal list (cards with name + tag + delete button)
-  ├── [+ Add Meal] form (inline at bottom)
-  └── [Decide!] button (sticky bottom or center)
-       └── → Spin animation overlay
-               └── → Result display ("You should eat: X")
-                       └── [Spin Again] or [Dismiss]
-```
+### 3-7. 共有
+- 結果エリアに「共有」ボタンを表示
+- タップでクリップボードにコピー
+- コピーテキスト：今日のごはんは【候補名】に決まりました🍽️
+- コピー成功後：ボタンラベルを「コピーしました！」に変更（2秒後に戻す）
+
+### 3-8. 候補枯渇
+- フィルタ条件に合う候補がすべて一時除外された場合
+- 一時除外リストをリセットし、再抽選を実行
+
+## 4. 「候補」タブ
+
+### 4-1. 画面構成
+1. 候補追加エリア（上部）
+2. 候補一覧
+
+### 4-2. 候補追加
+- テキスト入力フィールド＋「追加」ボタン
+- 入力が空の場合、追加ボタンは非活性
+- 重複名は追加不可。エラーメッセージ：「同じ名前の候補がすでにあります」
+- 追加後、入力フィールドをクリア
+
+### 4-3. 候補一覧
+各候補の表示内容：
+- 候補名
+- 設定済みタグ（バッジ表示）
+- 除外中バッジ（除外中の場合のみ）
+- タグ編集ボタン
+- 削除ボタン（プリセットは非表示）／除外トグル
+
+### 4-4. タグ編集
+- タグ編集ボタンタップでインライン展開
+- 3軸のタグをチェックボックスで選択
+- 選択状態は即時保存（確定ボタン不要）
+
+### 4-5. プリセット候補の操作
+- 削除ボタン：表示しない
+- 除外トグルボタン：表示する
+
+### 4-6. ユーザー追加候補の操作
+- 削除ボタン：表示する（即時削除、確認ダイアログなし）
+- 除外トグルボタン：表示する
+
+### 4-7. データ保存
+- キー：candidates
+- isPreset: boolean
+- isExcluded: boolean
+- tags: { budget, time, scene }
+
+## 5. 「ログ」タブ
+
+### 5-1. 画面構成
+1. 全消去ボタン（上部右寄せ）
+2. ログ一覧（新しい順）
+
+### 5-2. ログ一覧
+- 各ログ：日付（YYYY/MM/DD HH:mm）・候補名
+- 個別削除ボタン：即時削除、確認ダイアログなし
+
+### 5-3. 全消去
+- 確認ダイアログを表示してから全削除
+
+### 5-4. ログが0件の場合
+- 「まだ記録がありません」を表示
+
+## 6. データ設計
+
+localStorageキー：
+- tutorial_done：チュートリアル表示済みフラグ
+- candidates：候補一覧
+- decisionLog：決定ログ
+
+セッション管理（localStorageに保存しない）：
+- freeSpins：残り無料回数（初期値1）
+- tempExcluded：セッション中の一時除外リスト
+- currentResult：現在の抽選結果
+
+## 7. プリセット候補一覧（25件）
+
+ラーメン：予算=節約・定番、時間帯=ランチ・ディナー、シーン=食事メイン
+寿司：予算=定番・ご馳走、時間帯=ランチ・ディナー、シーン=食事メイン
+焼肉：予算=定番・ご馳走、時間帯=ランチ・ディナー、シーン=食事メイン・飲み会
+牛丼：予算=節約、時間帯=ランチ・ディナー、シーン=食事メイン
+カレー：予算=節約・定番、時間帯=ランチ・ディナー、シーン=食事メイン
+うどん：予算=節約・定番、時間帯=ランチ・ディナー、シーン=食事メイン
+そば：予算=節約・定番、時間帯=ランチ、シーン=食事メイン
+パスタ：予算=定番、時間帯=ランチ・ディナー、シーン=食事メイン
+ピザ：予算=定番、時間帯=ランチ・ディナー、シーン=食事メイン・飲み会
+ハンバーガー：予算=節約・定番、時間帯=ランチ・ディナー、シーン=食事メイン
+定食：予算=節約・定番、時間帯=ランチ・ディナー、シーン=食事メイン
+丼：予算=節約・定番、時間帯=ランチ・ディナー、シーン=食事メイン
+中華：予算=定番、時間帯=ランチ・ディナー、シーン=食事メイン
+タイ料理：予算=定番、時間帯=ランチ・ディナー、シーン=食事メイン
+インド料理：予算=定番、時間帯=ランチ・ディナー、シーン=食事メイン
+ステーキ：予算=ご馳走、時間帯=ランチ・ディナー、シーン=食事メイン
+鍋：予算=定番・ご馳走、時間帯=ディナー、シーン=食事メイン・飲み会
+居酒屋：予算=定番、時間帯=ディナー、シーン=飲み会
+焼き鳥：予算=節約・定番、時間帯=ディナー、シーン=飲み会・二次会
+もつ鍋：予算=定番、時間帯=ディナー、シーン=飲み会
+カフェ：予算=節約・定番、時間帯=ランチ・ディナー、シーン=カフェ・二次会
+スイーツ店：予算=定番、時間帯=ランチ・ディナー、シーン=カフェ・二次会
+ファミレス：予算=節約・定番、時間帯=ランチ・ディナー、シーン=食事メイン・二次会
+コンビニ：予算=節約、時間帯=ランチ・ディナー、シーン=食事メイン
+弁当：予算=節約、時間帯=ランチ、シーン=食事メイン
+
+## 8. 制約・非機能要件
+- データ保存：localStorageのみ
+- 対応環境：モダンブラウザ（Chrome・Safari・Firefox最新版）
+- フレームワーク：Vite + React
+- ホスティング：GitHub Pages
+- PWA：manifest.jsonを用意しホーム画面追加に対応する
+- オフライン動作：全機能オフラインで動作すること

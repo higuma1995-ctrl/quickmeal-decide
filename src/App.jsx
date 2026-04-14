@@ -1,73 +1,70 @@
-import { useState, useCallback } from 'react';
-import './App.css';
-import { useMeals } from './hooks/useMeals';
-import CategoryTabs from './components/CategoryTabs';
-import MealList from './components/MealList';
-import AddMealForm from './components/AddMealForm';
-import DecideButton from './components/DecideButton';
-import SpinOverlay from './components/SpinOverlay';
+import { useState } from 'react';
+import { storage } from './utils/storage';
+import { useCandidates } from './hooks/useCandidates';
+import { useDecisionLog } from './hooks/useDecisionLog';
+import { useSession } from './hooks/useSession';
+import Header from './components/layout/Header';
+import BottomNav from './components/layout/BottomNav';
+import TutorialModal from './components/modals/TutorialModal';
+import DecideTab from './components/decide/DecideTab';
+import CandidatesTab from './components/candidates/CandidatesTab';
+import LogTab from './components/log/LogTab';
 
 export default function App() {
-  const { meals, addMeal, deleteMeal } = useMeals();
-  const [activeCategory, setActiveCategory] = useState('All');
-  const [isSpinning, setIsSpinning] = useState(false);
-  const [spinKey, setSpinKey] = useState(0); // increment to force SpinOverlay remount
+  const [activeTab, setActiveTab] = useState('decide');
+  const [showTutorial, setShowTutorial] = useState(
+    () => !storage.get('tutorial_done', false)
+  );
 
-  const filteredMeals =
-    activeCategory === 'All'
-      ? meals
-      : meals.filter((m) => m.category === activeCategory);
+  const { candidates, addCandidate, removeCandidate, updateCandidate, toggleExclude } = useCandidates();
+  const { log, addLog, removeLog, clearLog, recentNames } = useDecisionLog();
+  const {
+    freeSpins, consumeSpin,
+    tempExcluded, addTempExcluded, resetTempExcluded,
+    currentResult, setCurrentResult,
+  } = useSession();
 
-  function handleDecide() {
-    if (filteredMeals.length === 0) return;
-    setIsSpinning(true);
-    setSpinKey((k) => k + 1);
-  }
-
-  const handleResult = useCallback((meal) => {
-    if (meal === null) {
-      // "Spin Again" — remount the overlay with a fresh key
-      setSpinKey((k) => k + 1);
-    }
-  }, []);
-
-  function handleDismiss() {
-    setIsSpinning(false);
+  function handleCloseTutorial() {
+    storage.set('tutorial_done', true);
+    setShowTutorial(false);
   }
 
   return (
     <div className="app">
-      <header className="app-header">
-        <h1 className="app-title">
-          <span className="title-icon">🍽️</span> クイックミール決定
-        </h1>
-        <p className="app-subtitle">何を食べようか迷っていますか？私たちにお任せください！</p>
-      </header>
+      <Header />
 
       <main className="app-main">
-        <CategoryTabs activeCategory={activeCategory} onSelect={setActiveCategory} />
-
-        <section className="meal-section">
-          <MealList meals={filteredMeals} onDelete={deleteMeal} />
-        </section>
-
-        <section className="add-section">
-          <AddMealForm onAdd={addMeal} />
-        </section>
+        {activeTab === 'decide' && (
+          <DecideTab
+            candidates={candidates}
+            freeSpins={freeSpins}
+            consumeSpin={consumeSpin}
+            tempExcluded={tempExcluded}
+            addTempExcluded={addTempExcluded}
+            resetTempExcluded={resetTempExcluded}
+            currentResult={currentResult}
+            setCurrentResult={setCurrentResult}
+            addLog={addLog}
+            recentNames={recentNames}
+          />
+        )}
+        {activeTab === 'candidates' && (
+          <CandidatesTab
+            candidates={candidates}
+            onAdd={addCandidate}
+            onRemove={removeCandidate}
+            onUpdate={updateCandidate}
+            onToggleExclude={toggleExclude}
+          />
+        )}
+        {activeTab === 'log' && (
+          <LogTab log={log} onRemove={removeLog} onClear={clearLog} />
+        )}
       </main>
 
-      <div className="decide-area">
-        <DecideButton onClick={handleDecide} disabled={filteredMeals.length === 0} />
-      </div>
+      <BottomNav activeTab={activeTab} onSelect={setActiveTab} />
 
-      {isSpinning && (
-        <SpinOverlay
-          key={spinKey}
-          meals={filteredMeals}
-          onResult={handleResult}
-          onDismiss={handleDismiss}
-        />
-      )}
+      {showTutorial && <TutorialModal onClose={handleCloseTutorial} />}
     </div>
   );
 }
