@@ -2,15 +2,12 @@ import { useState } from 'react';
 import FilterArea from './FilterArea';
 import DecideButton from './DecideButton';
 import ResultArea from './ResultArea';
-import AdModal from '../modals/AdModal';
 import { filterCandidates, weightedPick } from '../../utils/lottery';
 
 const EMPTY_FILTERS = { budget: [], time: [], scene: [] };
 
-export default function DecideTab({ candidates, freeSpins, consumeSpin, tempExcluded, addTempExcluded, resetTempExcluded, currentResult, setCurrentResult, addLog, recentNames }) {
+export default function DecideTab({ candidates, tempExcluded, addTempExcluded, resetTempExcluded, currentResult, setCurrentResult, addLog, recentNames }) {
   const [filters, setFilters] = useState(EMPTY_FILTERS);
-  const [showAd, setShowAd] = useState(false);
-  const [pendingRejectId, setPendingRejectId] = useState(null);
 
   // 候補プール（tempExcludedなし）：ボタン活性判定用
   const basePool = filterCandidates(candidates, filters, []);
@@ -37,35 +34,15 @@ export default function DecideTab({ candidates, freeSpins, consumeSpin, tempExcl
 
   function handleDecide() {
     if (isEmpty) return;
-    if (freeSpins > 0) {
-      consumeSpin();
-      doSpin(null);
-    } else {
-      setPendingRejectId(null);
-      setShowAd(true);
-    }
+    doSpin(null);
   }
 
   function handleReject() {
-    const rejectId = currentResult?.id;
-    if (freeSpins > 0) {
-      consumeSpin();
-      doSpin(rejectId);
-    } else {
-      setPendingRejectId(rejectId);
-      setShowAd(true);
-    }
+    doSpin(currentResult?.id);
   }
 
   function handleAccept() {
-    // ログは既に保存済み。表示のみリセット
     setCurrentResult(null);
-  }
-
-  function handleAdSkip() {
-    setShowAd(false);
-    doSpin(pendingRejectId);
-    setPendingRejectId(null);
   }
 
   return (
@@ -87,8 +64,6 @@ export default function DecideTab({ candidates, freeSpins, consumeSpin, tempExcl
           onReject={handleReject}
         />
       )}
-
-      {showAd && <AdModal onSkip={handleAdSkip} />}
     </div>
   );
 }

@@ -32,6 +32,11 @@ export default function ResultArea({ result, onAccept, onReject }) {
           これじゃない
         </button>
       </div>
+
+      {/* 将来のAdSense差し替え対象：バナー広告エリア */}
+      <div className="ad-banner-area">
+        <p className="ad-banner-text">広告エリア</p>
+      </div>
     </div>
   );
 }

@@ -19,7 +19,6 @@ export default function App() {
   const { candidates, addCandidate, removeCandidate, updateCandidate, toggleExclude } = useCandidates();
   const { log, addLog, removeLog, clearLog, recentNames } = useDecisionLog();
   const {
-    freeSpins, consumeSpin,
     tempExcluded, addTempExcluded, resetTempExcluded,
     currentResult, setCurrentResult,
   } = useSession();
@@ -37,8 +36,6 @@ export default function App() {
         {activeTab === 'decide' && (
           <DecideTab
             candidates={candidates}
-            freeSpins={freeSpins}
-            consumeSpin={consumeSpin}
             tempExcluded={tempExcluded}
             addTempExcluded={addTempExcluded}
             resetTempExcluded={resetTempExcluded}

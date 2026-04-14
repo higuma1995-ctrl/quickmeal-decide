@@ -5,6 +5,25 @@
 > - 形式：日付・変更内容・理由・影響範囲
 > - 複数仕様の併存禁止・推測実装禁止
 
+## [0.3.0] 2026-04-14
+
+### 変更
+- 再抽選を無制限無料に変更（擬似広告モーダルを廃止）
+- 結果表示後にバナー広告エリアを追加（AdSense差し替え前提）
+
+### 理由
+- 再抽選時の広告はアプリの目的（摩擦ゼロ）と矛盾し離脱につながるため
+- バナー広告は結果確認後に表示するため摩擦が少ない
+
+### 影響範囲
+- docs/CHANGELOG.md
+- docs/spec.md
+- docs/requirements.md
+- src/components/modals/AdModal.jsx（廃止）
+- src/components/decide/DecideTab.jsx
+- src/components/decide/ResultArea.jsx
+- src/hooks/useSession.js（freeSpins削除）
+
 ## [0.2.0] 2026-04-14
 
 ### 変更
